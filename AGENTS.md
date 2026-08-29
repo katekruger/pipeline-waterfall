@@ -12,9 +12,11 @@ and the preflight test specs.
 
 ## Commands
 
-- Install:   `cd integration_tests && uv run dbt deps`
-- Build:     `cd integration_tests && uv run dbt build`
-- Docs:      `cd integration_tests && uv run dbt docs generate`
+- Install:   `cd integration_tests && uv run --with-requirements requirements.txt dbt deps`
+- Build:     `cd integration_tests && uv run --with-requirements requirements.txt dbt build`
+- Docs:      `cd integration_tests && uv run --with-requirements requirements.txt dbt docs generate`
+
+There's no `pyproject.toml`/`uv.lock` declaring dbt as a dependency — `--with-requirements requirements.txt` is what actually resolves it. Plain `uv run dbt build` fails with "Failed to spawn: dbt".
 
 `dbt build` runs against DuckDB using the fixtures seeded in
 `integration_tests/seeds/`. No Salesforce, HubSpot, or dbt Cloud account is
