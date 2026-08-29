@@ -1,10 +1,14 @@
 # pipeline-waterfall
 
+The movement layer that turns CRM history into a reconciling pipeline bridge, without telling you what "slipped" means.
+
+![hubspot_closedate_tracked failing, with its message, against a HubSpot config missing closedate](docs/assets/hubspot-closedate-preflight.gif)
+
+The refusal is the product — this is `dbt build` catching a HubSpot config that would otherwise report zero slippage forever, silently, and telling you exactly what to fix.
+
 [![CI](https://github.com/katekruger/pipeline-waterfall/actions/workflows/ci.yml/badge.svg)](https://github.com/katekruger/pipeline-waterfall/actions/workflows/ci.yml)
 ![dbt](https://img.shields.io/badge/dbt-%3E%3D1.10.0%2C%3C3.0.0-orange)
 ![license](https://img.shields.io/badge/license-Apache%202.0-blue)
-
-The movement layer that turns CRM history into a reconciling pipeline bridge, without telling you what "slipped" means.
 
 ## Status
 
