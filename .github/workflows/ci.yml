@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+# Repo is private — Actions minutes are metered (~2,000/month on the free
+# tier). Keep this to a single job, single dbt/DuckDB version, until the
+# repo goes public. See docs/plans/going-public-checklist.md.
+jobs:
+  dbt-build:
+    name: dbt build (DuckDB)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: integration_tests
+    env:
+      DBT_DUCKDB_PATH: ci.duckdb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: "3.12"
+
+      - name: Install dbt
+        run: uv run --with-requirements requirements.txt dbt --version
+
+      - name: dbt deps
+        run: uv run --with-requirements requirements.txt dbt deps
+
+      - name: dbt build
+        run: uv run --with-requirements requirements.txt dbt build

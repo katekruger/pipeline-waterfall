@@ -1,0 +1,37 @@
+name: Feature request
+description: Propose a new capability, adapter, or configuration option
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What gap does this fill?
+      description: >
+        What can't you do today? If this is a new contested definition
+        (like pushed vs. slipped), say what the alternatives are and which
+        one you need.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: >
+        A new `var`? A new adapter macro? A new preflight test? Sketch it if
+        you have one in mind — this isn't binding, just a starting point.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which scope does this fit?
+      description: See BUILD-PLAN.md §3 for what's in v0.1 / v0.2 / v0.3.
+      options:
+        - v0.1 (reconciling core)
+        - v0.2 (second CRM + currency)
+        - v0.3 (standard play)
+        - Not sure
+    validations:
+      required: false

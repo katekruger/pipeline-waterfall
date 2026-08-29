@@ -1,0 +1,55 @@
+name: Bug report
+description: Something in the package produces a wrong or unexpected result
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: >
+        Ideally a minimal fixture (a few rows of daily-history-shaped data)
+        that reproduces the issue, similar to the ones in
+        `integration_tests/seeds/`.
+    validations:
+      required: true
+
+  - type: input
+    id: package-version
+    attributes:
+      label: pipeline_waterfall version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: dbt-version
+    attributes:
+      label: dbt version and adapter
+      placeholder: "dbt-core 1.12.3, dbt-snowflake / dbt-bigquery / dbt-duckdb / ..."
+    validations:
+      required: true
+
+  - type: input
+    id: history-source
+    attributes:
+      label: waterfall__history_source
+      placeholder: "fivetran_salesforce_history"
+    validations:
+      required: false
+
+  - type: textarea
+    id: vars
+    attributes:
+      label: Relevant `var` overrides
+      description: Any `waterfall__*` vars you've set away from their defaults.
+      render: yaml
+    validations:
+      required: false

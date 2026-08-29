@@ -1,0 +1,30 @@
+name: zizmor
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  zizmor:
+    name: Actions security audit
+    runs-on: ubuntu-latest
+    permissions:
+      # advanced-security's SARIF-upload mode needs `security-events: write`
+      # and either a public repo or GitHub Advanced Security on a paid plan.
+      # This repo is private without GHAS, so we run in plain-output mode
+      # instead — see docs/plans/going-public-checklist.md for switching
+      # this to the GHAS mode once the repo is public.
+      contents: read # only needed for private repos
+      actions: read # only needed for private repos
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+        with:
+          advanced-security: false
