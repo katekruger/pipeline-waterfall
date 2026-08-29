@@ -34,7 +34,15 @@ with
 
 {% for grain in grains %}
 {% set spine_start = "date_trunc('" ~ grain ~ "', cast('" ~ min_date ~ "' as date))" %}
-{% set spine_end = dbt.dateadd(grain, 1, "date_trunc('" ~ grain ~ "', cast('" ~ max_date ~ "' as date))") %}
+{#- dbt_utils.date_spine generates exactly N points for an N-period
+    datediff (offsets 0..N-1), it does not also include the end_date
+    itself as an (N+1)th point. +1 period would put the LAST real period
+    (the one containing max_date) at the end of the spine with no lead()
+    value, so `where period_end is not null` would drop the last REAL
+    period instead of the intended trailing partial one. +2 periods is
+    what actually gives the last real period a valid period_end and still
+    leaves exactly one true trailing partial period to drop. -#}
+{% set spine_end = dbt.dateadd(grain, 2, "date_trunc('" ~ grain ~ "', cast('" ~ max_date ~ "' as date))") %}
 
 {{ grain }}_spine as (
     {{ dbt_utils.date_spine(
@@ -68,6 +76,11 @@ unioned as (
 
 select *
 from unioned
--- drop the trailing partial period per grain -- its period_end isn't in
--- the data yet, so there's nothing to compare against
+-- Drop any period whose period_end has no observed data at all: NULL
+-- period_end is the always-partial trailing spine point; period_end >
+-- max_date is a period that LOOKS complete (it has a period_end) but
+-- whose closing snapshot doesn't actually exist in the contract yet --
+-- every entity open at that period's start would incorrectly appear to
+-- vanish at its end. Both are "there's nothing to compare against yet."
 where period_end is not null
+  and period_end <= cast('{{ max_date }}' as date)

@@ -9,6 +9,16 @@
 -- a count (implicit: one row = one deal) and a dollar variant
 -- (movement_amount), aggregated by waterfall__bridge_monthly/quarterly.
 --
+-- movement_amount is a business-reporting figure ("how big was the deal
+-- that won/expanded/..."); bridge_amount is a different thing -- the
+-- actual signed OPEN-PIPELINE delta this row is responsible for, computed
+-- generically off int_waterfall__transitions regardless of bucket. The two
+-- deliberately diverge (e.g. 'won' under terminal_wins reports the full
+-- post-growth movement_amount but only ever removes what was actually open
+-- at t0 from pipeline as bridge_amount) -- see ADR 0004 and
+-- models/preflight/bridge_reconciles.sql, which sums bridge_amount, not
+-- movement_amount.
+--
 -- Deviation from BUILD-PLAN.md §5's literal unique_key spec
 -- ("a surrogate of (entity_id, period_start, source_relation)"): that key
 -- omits period_grain. This model carries BOTH month and quarter grain rows
@@ -50,9 +60,11 @@ with_amount as (
                     else amount_t1
                 end
             when movement_bucket in ('expanded', 'contracted')
-                then amount_t1 - amount_t0
+                then coalesce(amount_t1, 0) - coalesce(amount_t0, 0)
             else amount_t1
-        end as movement_amount
+        end as movement_amount,
+
+        pipeline_contribution_t1 - pipeline_contribution_t0 as bridge_amount
 
     from transitions
 
@@ -67,6 +79,7 @@ select
     period_end,
     movement_bucket,
     movement_amount,
+    bridge_amount,
     stage_t1 as stage,
     currency_code_t1 as currency_code
 from with_amount

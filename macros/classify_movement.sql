@@ -100,15 +100,20 @@ case
 
     -- expanded / contracted: open at both, amount moved and nothing higher
     -- in precedence claimed the row (fixtures 9, 10; fixtures 12 and 13 are
-    -- claimed by won/pushed respectively before reaching here).
+    -- claimed by won/pushed respectively before reaching here). Amounts
+    -- are coalesced to 0 for the comparison -- an amount going to NULL
+    -- (fixture 18) is a real contraction (its pipeline contribution really
+    -- did drop to nothing), and NULL > / < a number is NULL (not true) in
+    -- SQL, which would otherwise let this fall through unclassified even
+    -- though its bridge_amount is genuinely nonzero. See ADR 0004.
     when exists_t0 and exists_t1
         and not coalesce(is_closed_t0, false) and not coalesce(is_closed_t1, false)
-        and amount_t1 > amount_t0
+        and coalesce(amount_t1, 0) > coalesce(amount_t0, 0)
         then 'expanded'
 
     when exists_t0 and exists_t1
         and not coalesce(is_closed_t0, false) and not coalesce(is_closed_t1, false)
-        and amount_t1 < amount_t0
+        and coalesce(amount_t1, 0) < coalesce(amount_t0, 0)
         then 'contracted'
 
     -- created: absent at t0, present and open at t1, created within the
