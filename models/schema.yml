@@ -1,0 +1,92 @@
+version: 2
+
+models:
+  - name: int_waterfall__daily_state
+    description: >
+      THE CONTRACT. One row per entity_id per date_day, normalized from
+      whichever history source `waterfall__history_source` selects. Every
+      model downstream of this one reads only from here -- this is what
+      makes the package CRM-agnostic. See BUILD-PLAN.md §5 for the full
+      architecture and the source of this column list.
+    columns:
+      - name: daily_state_id
+        description: Surrogate key of (entity_id, date_day, source_relation). Unique key for incremental loads.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: entity_id
+        description: The opportunity (or deal) id from the source CRM.
+        data_tests:
+          - not_null
+
+      - name: date_day
+        description: The calendar day this row's state is observed on.
+        data_tests:
+          - not_null
+
+      - name: source_relation
+        description: >
+          Multi-connector union key. HubSpot's Fivetran models carry this
+          column; Salesforce's do not, so the Salesforce adapter defaults it
+          to '' rather than NULL, keeping grain comparisons well-defined
+          across every adapter.
+        data_tests:
+          - not_null
+
+      - name: stage
+        description: The opportunity/deal's stage name as of this date_day.
+
+      - name: stage_order
+        description: >
+          Resolved by joining `stage` against the seed named by
+          `waterfall__stage_order_seed` (default `waterfall_stage_order`).
+          NULL when the observed stage isn't present in that seed -- see
+          fixture 19 and ADR 0002. The `stage_order_complete` preflight test
+          (Prompt 3) fails the build loudly when this happens rather than
+          silently treating a missing stage as unordered.
+
+      - name: amount
+        description: >
+          The opportunity amount, read from the column named by
+          `waterfall__amount_column` (default `amount`; commonly overridden
+          to a custom ARR field -- see fixture 20 and BUILD-PLAN.md §7 on
+          Salesforce amount being derived from line items).
+
+      - name: currency_code
+        description: >
+          Nullable in v0.1. Fivetran's Salesforce package does not select
+          CurrencyIsoCode by default -- this is the multi-currency landmine
+          documented in BUILD-PLAN.md §7. Populated only when the org has
+          added `currency_iso_code` to
+          `salesforce__opportunity_pass_through_columns`; see fixture 20.
+
+      - name: close_date
+        description: The expected or actual close date as of this date_day.
+
+      - name: is_closed
+        description: Whether the opportunity was closed (won or lost) as of this date_day.
+        data_tests:
+          - not_null
+
+      - name: is_won
+        description: Whether the opportunity was won as of this date_day.
+        data_tests:
+          - not_null
+
+      - name: owner_id
+        description: The opportunity owner as of this date_day.
+
+      - name: created_date
+        description: The opportunity's creation date. Constant across every date_day row for a given entity_id.
+        data_tests:
+          - not_null
+
+      - name: is_deleted
+        description: >
+          Flows through from the source untouched -- never filtered at
+          staging. A deal soft-deleted mid-period must stay visible here or
+          it vanishes retroactively from history and breaks bridge
+          reconciliation. See fixture 15.
+        data_tests:
+          - not_null

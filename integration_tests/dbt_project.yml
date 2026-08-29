@@ -4,6 +4,10 @@ config-version: 2
 
 profile: 'pipeline_waterfall_integration_tests'
 
+flags:
+  send_anonymous_usage_stats: false
+  require_ref_searches_node_package_before_root: True
+
 model-paths: ["models"]
 seed-paths: ["seeds"]
 test-paths: ["tests"]
@@ -11,3 +15,15 @@ test-paths: ["tests"]
 clean-targets:
   - "target"
   - "dbt_packages"
+
+seeds:
+  pipeline_waterfall_integration_tests:
+    salesforce__opportunity_daily_history:
+      +column_types:
+        date_day: date
+        amount: double
+        close_date: date
+        created_date: date
+        is_closed: boolean
+        is_deleted: boolean
+        is_won: boolean

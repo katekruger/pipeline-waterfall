@@ -22,6 +22,12 @@ models:
     intermediate:
       +materialized: view
 
+seeds:
+  pipeline_waterfall:
+    waterfall_stage_order:
+      +column_types:
+        stage_order: integer
+
 # Every var here is a contested definition, documented with both options in
 # docs/definitions.md (added in Prompt 4). Never hardcode a house opinion —
 # see AGENTS.md.
