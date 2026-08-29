@@ -1,0 +1,8 @@
+packages:
+  - package: dbt-labs/dbt_utils
+    version: [">=1.3.0", "<2.0.0"]
+
+# Deliberately NOT depending on fivetran/dbt_salesforce or fivetran/dbt_hubspot
+# here. Users bring their own CRM staging packages; pipeline_waterfall only
+# needs their output models to exist in the same dbt project (via ref()).
+# See macros/adapters/ and BUILD-PLAN.md §5.

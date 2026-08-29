@@ -1,0 +1,38 @@
+name: 'pipeline_waterfall'
+version: '0.1.0'
+config-version: 2
+
+# MUST include 2.0.0 in the range — packages that exclude it warn under Fusion
+# now and error later. This is also what earns the "Fusion compatible" badge
+# on the Hub. See BUILD-PLAN.md §5.
+require-dbt-version: [">=1.10.0", "<3.0.0"]
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  pipeline_waterfall:
+    +materialized: view
+    intermediate:
+      +materialized: view
+
+# Every var here is a contested definition, documented with both options in
+# docs/definitions.md (added in Prompt 4). Never hardcode a house opinion —
+# see AGENTS.md.
+vars:
+  waterfall__history_source: 'fivetran_salesforce_history'   # | fivetran_hubspot_history | dbt_snapshot
+  waterfall__amount_column: 'amount'                         # e.g. 'arr_c'
+  waterfall__stage_order_seed: 'waterfall_stage_order'       # user-supplied seed name
+  waterfall__cohort_mode: 'cohort_at_open'                   # | current_state
+  waterfall__created_stage_filter: []                        # [] = all opportunities
+  waterfall__slippage_definition: 'close_date_period'        # | period_end_open
+  waterfall__amount_change_precedence: 'terminal_wins'       # | movement_wins
+  waterfall__period_grain: ['month', 'quarter']
+  waterfall__fiscal_periods: false
+  waterfall__min_history_periods: 2                          # preflight hard-fail below this
