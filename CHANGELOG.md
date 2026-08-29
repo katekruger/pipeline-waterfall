@@ -6,3 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## 0.1.0 — 2026-08-29
+
+### Added
+
+- The daily-state contract (`int_waterfall__daily_state`), normalizing CRM opportunity history into one source-agnostic grain that everything downstream reads from.
+- A Salesforce history adapter for `fivetran/dbt_salesforce`, including support for a custom ARR/amount column and opportunistic multi-currency passthrough.
+- Movement classification into ten buckets — created, won, lost, reopened, pushed, pulled_in, slipped, advanced, expanded, contracted — each with both a count and a dollar figure, at monthly and quarterly grain.
+- `bridge_reconciles`, the headline test: opening pipeline plus every movement bucket equals closing pipeline, exactly, every period.
+- Six more preflight checks that fail the build instead of letting a wrong number ship silently: `history_depth`, `hubspot_closedate_tracked`, `salesforce_history_enabled`, `stage_order_complete`, `multi_currency_unguarded`, and `history_gap`.
+- Ten configurable variables covering every contested definition in the package — cohort mode, slippage definition, amount-change precedence, created-stage filter, and more — with both options documented and no hardcoded house opinion.
+- `docs/definitions.md` and `docs/history-sources.md`, documenting every contested definition and every history source's specific failure mode.
+
+### Internal
+
+- dbt package scaffolding, CI (`dbt build` on DuckDB, plus a `zizmor` Actions security audit), a tag-triggered release workflow, and four ADRs recording the non-obvious decisions behind the classifier and the bridge math.
