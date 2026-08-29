@@ -90,3 +90,82 @@ models:
           reconciliation. See fixture 15.
         data_tests:
           - not_null
+
+  - name: int_waterfall__period_boundaries
+    description: >
+      One row per period per grain in `waterfall__period_grain` (default
+      month and quarter), spanning the date range actually present in
+      `int_waterfall__daily_state`. `period_end` is the next period's
+      `period_start` -- a telescoping boundary, since a period's closing
+      state is the next period's opening state. The trailing partial period
+      per grain is dropped since its end isn't known yet.
+    columns:
+      - name: period_grain
+        description: "'month' or 'quarter' (whichever grains are in `waterfall__period_grain`)."
+        data_tests:
+          - not_null
+      - name: period_start
+        description: The first day of the period (inclusive).
+        data_tests:
+          - not_null
+      - name: period_end
+        description: The first day of the next period (exclusive) -- i.e. this period's own closing snapshot date.
+        data_tests:
+          - not_null
+
+  - name: int_waterfall__transitions
+    description: >
+      One row per (entity_id, source_relation, period_grain, period_start)
+      for every entity present at period start, period end, or both --
+      including rows where `movement_bucket` is NULL, meaning nothing that
+      affects bridge dollars changed (see ADR 0002 and ADR 0003). This is
+      the raw comparison layer; `waterfall__movement_detail` filters to
+      classified rows only. See BUILD-PLAN.md §5 "Movement classification --
+      the rules" and `macros/classify_movement.sql`.
+    columns:
+      - name: entity_id
+        description: Opportunity/deal id, as in the contract.
+      - name: movement_bucket
+        description: >
+          One of the ten buckets (`created, won, lost, reopened, pushed,
+          pulled_in, slipped, advanced, expanded, contracted`), or NULL if
+          nothing classifiable changed between t0 and t1.
+
+  - name: waterfall__movement_detail
+    description: >
+      One row per opportunity per period per bucket -- only rows where
+      `int_waterfall__transitions.movement_bucket` is not null. Both a
+      count (implicit: one row per deal) and a dollar variant
+      (`movement_amount`) are available on every bucket; see
+      `waterfall__bridge_monthly`/`waterfall__bridge_quarterly` for the
+      aggregated form. Incremental, unique key
+      `(entity_id, source_relation, period_grain, period_start)` -- see the
+      model's own header comment and ADR 0003 for why `period_grain` is in
+      the key even though BUILD-PLAN.md §5's literal spec omits it.
+    columns:
+      - name: movement_detail_id
+        description: Surrogate key of (entity_id, source_relation, period_grain, period_start).
+        data_tests:
+          - unique
+          - not_null
+      - name: movement_bucket
+        description: One of the ten buckets. Never NULL in this model (unlike `int_waterfall__transitions`) -- unclassified rows are filtered out here.
+        data_tests:
+          - not_null
+      - name: movement_amount
+        description: >
+          The dollar figure for this bucket. For `expanded`/`contracted`,
+          the signed delta (t1 amount - t0 amount). For every other bucket,
+          the relevant amount at t1 -- except `won`/`lost`, which respect
+          `waterfall__amount_change_precedence` (see ADR 0003).
+
+  - name: waterfall__bridge_monthly
+    description: >
+      `waterfall__movement_detail` aggregated to (period_start, period_end,
+      movement_bucket) at monthly grain: `movement_count` and
+      `movement_amount` per bucket per period. Bridge reconciliation
+      (opening + movements = closing, exactly) is asserted by a dedicated
+      test in Prompt 3, not by this model.
+
+  - name: waterfall__bridge_quarterly
+    description: Same shape as `waterfall__bridge_monthly`, at quarterly grain.

@@ -7,6 +7,7 @@ case03-created-open-1,2026-01-15,8000,2026-03-01,2026-01-15,false,false,false,ow
 case03-created-open-1,2026-02-01,8000,2026-03-01,2026-01-15,false,false,false,owner_001,Qualification,
 case04-created-and-won-1,2026-01-05,12000,2026-01-20,2026-01-05,false,false,false,owner_001,Prospecting,
 case04-created-and-won-1,2026-01-20,12000,2026-01-20,2026-01-05,true,false,true,owner_001,Closed Won,
+case04-created-and-won-1,2026-02-01,12000,2026-01-20,2026-01-05,true,false,true,owner_001,Closed Won,
 case05-pushed-1,2026-01-01,15000,2026-01-25,2025-10-01,false,false,false,owner_001,Negotiation/Review,
 case05-pushed-1,2026-02-01,15000,2026-03-15,2025-10-01,false,false,false,owner_001,Negotiation/Review,
 case06-pulled-in-1,2026-01-01,9000,2026-03-15,2025-10-15,false,false,false,owner_001,Proposal/Price Quote,
@@ -43,3 +44,6 @@ case20-currency-usd-1,2026-01-01,10000,2026-04-01,2025-10-01,false,false,false,o
 case20-currency-usd-1,2026-02-01,10000,2026-04-01,2025-10-01,false,false,false,owner_001,Negotiation/Review,USD
 case20-currency-eur-1,2026-01-01,9000,2026-04-01,2025-10-01,false,false,false,owner_001,Negotiation/Review,EUR
 case20-currency-eur-1,2026-02-01,9000,2026-04-01,2025-10-01,false,false,false,owner_001,Negotiation/Review,EUR
+cohortmode-demo-1,2026-01-01,5000,2026-05-01,2025-09-01,false,false,false,owner_001,Prospecting,
+cohortmode-demo-1,2026-02-01,5000,2026-05-01,2025-09-01,false,false,false,owner_001,Prospecting,
+cohortmode-demo-1,2026-03-01,8000,2026-05-01,2025-09-01,false,false,false,owner_001,Prospecting,

@@ -15,3 +15,13 @@ macros:
       Defaults `source_relation` to '' and passes `is_deleted` through
       untouched -- see the macro's own header comment and BUILD-PLAN.md §5/§7
       for why both matter.
+
+  - name: classify_movement
+    description: >
+      Emits the CASE WHEN expression classifying one entity-period
+      comparison row (built by `int_waterfall__transitions`) into one of
+      the ten movement buckets, or NULL. Implements the precedence order
+      and the `waterfall__slippage_definition` /
+      `waterfall__created_stage_filter` branches from BUILD-PLAN.md §5 --
+      see the macro's own header comment for the exact column contract it
+      expects, and ADR 0002/0003 for the judgment calls behind it.
