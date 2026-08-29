@@ -1,0 +1,126 @@
+version: 2
+
+models:
+  - name: bridge_reconciles
+    description: >
+      THE HEADLINE TEST. Computes, per period, opening pipeline + every
+      movement bucket vs. closing pipeline -- a row here means that period
+      did NOT reconcile exactly. Opening/closing are computed directly from
+      `int_waterfall__daily_state`, independent of
+      `waterfall__movement_detail`'s `bridge_amount`, so this can catch a
+      real classification bug rather than just agreeing with itself. See
+      ADR 0004.
+    data_tests:
+      - assert_empty:
+          config:
+            store_failures: true
+
+  - name: history_depth
+    description: >
+      Fires when there isn't at least `waterfall__min_history_periods` full
+      periods of history before the latest reportable period, for any
+      grain in `waterfall__period_grain`. Fivetran History Mode does not
+      backfill -- a new connection starts with zero history.
+    data_tests:
+      - assert_empty:
+          config:
+            store_failures: true
+
+  - name: hubspot_closedate_tracked
+    description: >
+      THE MOST IMPORTANT TEST IN THE PACKAGE. Fires when
+      `hubspot__deal_property_history_columns` is set but doesn't include
+      `closedate` -- without it, `pushed`/`pulled_in`/`slipped` are all
+      silently zero forever and the build still reconciles cleanly. Checked
+      independent of the (not-yet-built, v0.2) HubSpot adapter -- see the
+      model's own header comment and ADR 0004.
+    data_tests:
+      - assert_empty:
+          config:
+            store_failures: true
+
+  - name: salesforce_history_enabled
+    description: Fires when `salesforce__opportunity_history_enabled` is false -- the Salesforce adapter's source model doesn't exist without it.
+    data_tests:
+      - assert_empty:
+          config:
+            store_failures: true
+
+  - name: stage_order_complete
+    description: >
+      Fires when any observed `stage` in the contract has no match in the
+      stage-order seed (a NULL `stage_order`) -- lists every missing stage.
+    data_tests:
+      - assert_empty:
+          config:
+            store_failures: true
+
+  - name: multi_currency_unguarded
+    description: >
+      Fires when more than one distinct `currency_code` is observed and
+      `waterfall__currency_mode` is unset -- Fivetran's Salesforce package
+      has zero currency conversion, so amounts are being silently summed
+      across currencies.
+    data_tests:
+      - assert_empty:
+          config:
+            store_failures: true
+
+  - name: history_gap
+    description: >
+      Fires when an entity is present on day N and day N+2 but absent on
+      N+1, while open on both sides -- the known fivetran/dbt_salesforce
+      <2.4.0 bug. Deliberately narrow (exactly a 2-day gap) -- see the
+      model's own header comment for why.
+    data_tests:
+      - assert_empty:
+          config:
+            store_failures: true
+
+unit_tests:
+
+  - name: test_stage_order_complete_fires_on_unmapped_stage
+    description: Proves stage_order_complete fires when a stage has no seed match, without needing a broken row in the standing "good" fixture set (removed from it in this PR -- see the seed's own history and the PR body).
+    model: stage_order_complete
+    given:
+      - input: ref('int_waterfall__daily_state')
+        rows:
+          - {entity_id: 'unit-test-1', source_relation: '', date_day: '2026-01-01', stage: 'Custom Stage Not In Seed', stage_order: null, amount: 4000, is_closed: false}
+    expect:
+      rows:
+        - {missing_stage: 'Custom Stage Not In Seed'}
+
+  - name: test_history_gap_fires_on_two_day_gap
+    description: Proves history_gap fires on the exact N/N+2 pattern, using the shape originally built as fixture 17 (moved out of the standing "good" seed in this PR).
+    model: history_gap
+    given:
+      - input: ref('int_waterfall__daily_state')
+        rows:
+          - {entity_id: 'unit-test-1', source_relation: '', date_day: '2026-01-10', is_closed: false}
+          - {entity_id: 'unit-test-1', source_relation: '', date_day: '2026-01-12', is_closed: false}
+    expect:
+      rows:
+        - {entity_id: 'unit-test-1', present_day_n: '2026-01-10', present_day_n_plus_2: '2026-01-12'}
+
+  - name: test_bridge_reconciles_fires_on_vanished_entity
+    description: >
+      Proves bridge_reconciles fires when an entity is open at t0 and has
+      no row at all at t1 (never closed, never deleted -- a realistic
+      Fivetran sync-gap scenario). classify_movement has no bucket for
+      this today (nothing checks for an entity simply disappearing), so
+      nothing in waterfall__movement_detail explains its departure from
+      pipeline -- this is exactly the gap this test exists to catch. Not
+      one of the 20 canonical fixtures; a deliberately broken scenario.
+    model: bridge_reconciles
+    given:
+      - input: ref('int_waterfall__period_boundaries')
+        rows:
+          - {period_grain: 'month', period_start: '2020-01-01', period_end: '2020-02-01'}
+      - input: ref('int_waterfall__daily_state')
+        rows:
+          - {entity_id: 'vanished-1', source_relation: '', date_day: '2020-01-01', amount: 5000, is_closed: false}
+      - input: ref('waterfall__movement_detail')
+        rows: []
+    expect:
+      rows:
+        - {period_grain: 'month', period_start: '2020-01-01', opening_pipeline: 5000, closing_pipeline: 0, total_movement: 0, computed_closing_pipeline: 5000, delta: -5000}

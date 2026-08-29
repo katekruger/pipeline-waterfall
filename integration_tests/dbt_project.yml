@@ -16,6 +16,43 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+vars:
+  # This project's seed data is shaped as if Fivetran History Mode were
+  # actually enabled -- salesforce_history_enabled (models/preflight/) would
+  # otherwise correctly fail this build, since the var it checks defaults to
+  # false upstream.
+  salesforce__opportunity_history_enabled: true
+  # Test-harness-only override of the package default (['month', 'quarter']).
+  # Quarter grain needs 6 real months of span for history_depth to pass on
+  # it; this project's fixtures are deliberately sparse (Jan/Feb anchors,
+  # not continuous daily rows -- see the seed file), and backfilling every
+  # fixture with months of unchanging history just to satisfy one grain's
+  # threshold would bloat the seed for no real test value. Quarter-grain
+  # models (waterfall__bridge_quarterly, etc.) still build correctly here,
+  # they're just empty -- exercised for real by a real user's continuous
+  # daily history, not by this harness. Do not carry this into the
+  # package's own dbt_project.yml default.
+  waterfall__period_grain: ['month']
+  # Test-harness-only override of the package default (2). This project's
+  # fixtures only span one real month (January -> February) by design.
+  # Extending the seed backward to satisfy the default threshold was tried
+  # and reverted: it creates the exact "created" landmine fixture 4 exists
+  # to catch -- every other fixture's first row would land exactly at a new
+  # period boundary, absent-then-present with a created_date that doesn't
+  # match that period, a real bridge_amount with no bucket to explain it
+  # (see int_waterfall__transitions.sql and ADR 0004). Lowering the
+  # threshold to match this harness's genuinely minimal, deliberately
+  # sparse fixture span is more honest than bloating the seed just to
+  # satisfy this one check. Do not carry this into the package's own
+  # dbt_project.yml default -- a real user's continuous history is exactly
+  # what history_depth needs to check meaningfully.
+  waterfall__min_history_periods: 1
+  # Acknowledges that integration_tests/seeds/ deliberately contains two
+  # currencies (fixture 20) -- multi_currency_unguarded only fires when this
+  # is unset. Real multi-currency conversion is v0.2; this is not that, it's
+  # just "yes, I know" for a fixture that predates the check.
+  waterfall__currency_mode: 'unconverted'
+
 seeds:
   pipeline_waterfall_integration_tests:
     salesforce__opportunity_daily_history:

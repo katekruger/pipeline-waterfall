@@ -34,16 +34,9 @@ case16-merged-away-1,2026-01-01,7000,2026-01-25,2025-09-15,false,false,false,own
 case16-merged-away-1,2026-02-01,7000,2026-01-25,2025-09-15,true,false,false,owner_001,Closed Lost,
 case16-merged-survivor-1,2026-01-01,12000,2026-03-01,2025-08-01,false,false,false,owner_001,Negotiation/Review,
 case16-merged-survivor-1,2026-02-01,19000,2026-03-01,2025-08-01,false,false,false,owner_001,Negotiation/Review,
-case17-gappy-history-1,2026-01-10,5000,2026-04-01,2025-12-01,false,false,false,owner_001,Qualification,
-case17-gappy-history-1,2026-01-12,5000,2026-04-01,2025-12-01,false,false,false,owner_001,Qualification,
 case18-amount-null-1,2026-01-01,8000,2026-04-20,2025-11-05,false,false,false,owner_001,Value Proposition,
 case18-amount-null-1,2026-02-01,,2026-04-20,2025-11-05,false,false,false,owner_001,Value Proposition,
-case19-unknown-stage-1,2026-01-01,4000,2026-04-25,2025-12-15,false,false,false,owner_001,Prospecting,
-case19-unknown-stage-1,2026-02-01,4000,2026-04-25,2025-12-15,false,false,false,owner_001,Custom Stage Not In Seed,
 case20-currency-usd-1,2026-01-01,10000,2026-04-01,2025-10-01,false,false,false,owner_001,Negotiation/Review,USD
 case20-currency-usd-1,2026-02-01,10000,2026-04-01,2025-10-01,false,false,false,owner_001,Negotiation/Review,USD
 case20-currency-eur-1,2026-01-01,9000,2026-04-01,2025-10-01,false,false,false,owner_001,Negotiation/Review,EUR
 case20-currency-eur-1,2026-02-01,9000,2026-04-01,2025-10-01,false,false,false,owner_001,Negotiation/Review,EUR
-cohortmode-demo-1,2026-01-01,5000,2026-05-01,2025-09-01,false,false,false,owner_001,Prospecting,
-cohortmode-demo-1,2026-02-01,5000,2026-05-01,2025-09-01,false,false,false,owner_001,Prospecting,
-cohortmode-demo-1,2026-03-01,8000,2026-05-01,2025-09-01,false,false,false,owner_001,Prospecting,

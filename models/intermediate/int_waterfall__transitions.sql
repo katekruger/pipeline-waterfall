@@ -114,7 +114,29 @@ joined as (
         t1.owner_id as owner_id_t1,
         t1.is_deleted as is_deleted_t1,
 
-        coalesce(t1.created_date, t0.created_date) as created_date
+        coalesce(t1.created_date, t0.created_date) as created_date,
+
+        -- Generic, bucket-independent pipeline contribution: what this
+        -- entity was actually worth to OPEN pipeline at t0/t1. Used to
+        -- compute bridge_amount in waterfall__movement_detail -- NOT the
+        -- same thing as movement_amount (a business-reporting figure that
+        -- can legitimately differ, e.g. 'won' under terminal_wins reports
+        -- the full post-growth amount, but only ever removes what was
+        -- actually open at t0 from pipeline). Coalesces NULL amounts to 0
+        -- rather than propagating NULL through the bridge sum -- see
+        -- fixture 18 and ADR 0004. "Pipeline" = is_closed = false only;
+        -- is_deleted does not affect this in v0.1 -- see ADR 0004.
+        case
+            when t0.entity_id is not null and not coalesce(t0.is_closed, false)
+                then coalesce(t0.amount, 0)
+            else 0
+        end as pipeline_contribution_t0,
+
+        case
+            when t1.entity_id is not null and not coalesce(t1.is_closed, false)
+                then coalesce(t1.amount, 0)
+            else 0
+        end as pipeline_contribution_t1
 
     from candidates c
     left join t0_state t0
