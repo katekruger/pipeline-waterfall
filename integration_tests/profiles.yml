@@ -1,6 +1,3 @@
-config:
-  send_anonymous_usage_stats: false
-
 pipeline_waterfall_integration_tests:
   target: duckdb
   outputs:
