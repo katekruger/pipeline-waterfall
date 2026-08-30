@@ -1,4 +1,5 @@
--- Fails if any of the 20 canonical fixtures (see
+-- Fails if any of the 23 canonical fixtures (20 from the original build,
+-- plus 21/22/23 added for ENG-7d/ENG-7e -- see
 -- integration_tests/seeds/salesforce__opportunity_daily_history.csv and the
 -- edge-case checklist in the prompts doc) doesn't land in its documented
 -- expected bucket for the January 2026 monthly period. Expected NULL means
