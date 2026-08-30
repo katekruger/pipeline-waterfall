@@ -71,7 +71,9 @@ jobs:
       # exactly the "silently wrong number" failure mode this package
       # exists to refuse.
       - name: dbt build (current_state, run 1)
-        run: uv run --python 3.12 --with "dbt-core==${{ matrix.dbt-version }}" --with "dbt-duckdb==${{ matrix.dbt-duckdb-version }}" dbt build --vars '{waterfall__cohort_mode: current_state}'
+        run: |
+          uv run --python 3.12 --with "dbt-core==${{ matrix.dbt-version }}" --with "dbt-duckdb==${{ matrix.dbt-duckdb-version }}" dbt build --vars '{waterfall__cohort_mode: current_state}'
 
       - name: dbt build (current_state, run 2)
-        run: uv run --python 3.12 --with "dbt-core==${{ matrix.dbt-version }}" --with "dbt-duckdb==${{ matrix.dbt-duckdb-version }}" dbt build --vars '{waterfall__cohort_mode: current_state}'
+        run: |
+          uv run --python 3.12 --with "dbt-core==${{ matrix.dbt-version }}" --with "dbt-duckdb==${{ matrix.dbt-duckdb-version }}" dbt build --vars '{waterfall__cohort_mode: current_state}'
