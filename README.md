@@ -56,7 +56,7 @@ Evaluated per opportunity, comparing state at period start (t0) to period end (t
 | `reopened` | closed at t0, open again at t1 — never folded into `created` |
 | `pushed` | open at both, close date moved to a later period |
 | `pulled_in` | open at both, close date moved to an earlier period — the mirror of `pushed`, required for the bridge to reconcile |
-| `slipped` | close date was in-period at t0, still open at t1 |
+| `slipped` | close date was in-period at t0, still open at t1, and stage/amount are both unchanged from t0 — otherwise `advanced`/`expanded`/`contracted` claims the row instead |
 | `advanced` | open at both, stage order increased, close date unchanged |
 | `expanded` | open at both, amount increased |
 | `contracted` | open at both, amount decreased |
@@ -73,7 +73,7 @@ Every contested definition is a variable, with every option documented and the c
 | `waterfall__amount_column` | `'amount'` | any numeric column on the source model, e.g. a custom ARR field |
 | `waterfall__stage_order_seed` | `'waterfall_stage_order'` | the name of your own stage-order seed |
 | `waterfall__cohort_mode` | `'cohort_at_open'` | `'current_state'` |
-| `waterfall__created_stage_filter` | `[]` (all opportunities) | a list of stage names |
+| `waterfall__created_stage_filter` | `[]` (all opportunities) | a list of stage names — ⚠️ see `created_stage_filter_excludes_pipeline` below: setting this can break `bridge_reconciles` (known v0.1 limitation, ADR 0008) |
 | `waterfall__slippage_definition` | `'close_date_period'` | `'period_end_open'` |
 | `waterfall__amount_change_precedence` | `'terminal_wins'` | `'movement_wins'` |
 | `waterfall__period_grain` | `['month', 'quarter']` | any subset |
@@ -84,14 +84,16 @@ Every contested definition is a variable, with every option documented and the c
 
 A truly out-of-the-box CRM waterfall is not achievable — every available history source is either disabled by default, not backfilled, capped at 20 tracked fields, or missing the close-date field entirely. Most internal implementations don't know this and don't reconcile, and nobody notices until a board meeting.
 
-This package would rather fail your build than hand you a wrong number quietly. Seven checks run every time and fail loudly, each naming the exact fix:
+This package would rather fail your build than hand you a wrong number quietly. Nine checks run every time and fail loudly, each naming the exact fix:
 
 - **`bridge_reconciles`** — opening pipeline + every movement bucket must equal closing pipeline, *exactly*, every period. This is the headline feature; if it doesn't hold, nothing downstream can be trusted.
+- **`mart_bridge_reconciles`** — restates `bridge_reconciles` against `waterfall__bridge_monthly`/`waterfall__bridge_quarterly`'s own `bridge_amount` column, the one a chart actually queries — catches a regression there even if `bridge_reconciles` itself still passes.
 - **`hubspot_closedate_tracked`** — the single most important check in the package (once HubSpot lands in v0.2). HubSpot doesn't track close date in property history by default. Without it, a waterfall runs cleanly, reconciles, and reports zero slippage forever — and nothing else would ever tell you why.
 - **`salesforce_history_enabled`**, **`history_depth`** — the models this package reads from are disabled by default and don't backfill. A new connection has zero usable history on day one.
 - **`stage_order_complete`** — a stage missing from your stage-order seed doesn't error, it just quietly stops advancing.
 - **`multi_currency_unguarded`** — Fivetran's Salesforce package has zero currency handling. Multi-currency orgs are being summed across currencies right now, and nobody else catches this.
 - **`history_gap`** — a known bug in older Fivetran versions drops individual days from history. Silently missing a day looks identical to "nothing happened."
+- **`created_stage_filter_excludes_pipeline`** — ⚠️ known v0.1 limitation, not a full fix. `waterfall__created_stage_filter` only controls the `created` bucket; it doesn't remove the same entity from closing pipeline, so a filtered-out stage breaks reconciliation. This check names the excluded entity and stage directly instead of leaving you to decode a bare `bridge_reconciles` delta. See ADR 0008.
 
 Every one of these has been proven to actually fire against a deliberately broken scenario, not just written to look like it would — see `docs/decisions/0004-pipeline-definition-and-preflight-architecture.md`.
 

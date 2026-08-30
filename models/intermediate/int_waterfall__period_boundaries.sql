@@ -19,7 +19,11 @@
     from {{ ref('int_waterfall__daily_state') }}
 {% endset %}
 
-{% if execute %}
+{% if execute and load_relation(ref('int_waterfall__daily_state')) is not none %}
+{#- `execute` alone isn't enough: dbt compile and dbt docs generate both run
+    with execute = True against the real target, so this run_query would
+    still fire -- and fail -- on a cold/empty warehouse where
+    int_waterfall__daily_state hasn't been built yet. See ENG-7e. -#}
     {% set bounds = run_query(bounds_query) %}
     {% set min_date = bounds.columns[0].values()[0] %}
     {% set max_date = bounds.columns[1].values()[0] %}

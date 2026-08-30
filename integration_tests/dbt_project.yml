@@ -22,17 +22,14 @@ vars:
   # otherwise correctly fail this build, since the var it checks defaults to
   # false upstream.
   salesforce__opportunity_history_enabled: true
-  # Test-harness-only override of the package default (['month', 'quarter']).
-  # Quarter grain needs 6 real months of span for history_depth to pass on
-  # it; this project's fixtures are deliberately sparse (Jan/Feb anchors,
-  # not continuous daily rows -- see the seed file), and backfilling every
-  # fixture with months of unchanging history just to satisfy one grain's
-  # threshold would bloat the seed for no real test value. Quarter-grain
-  # models (waterfall__bridge_quarterly, etc.) still build correctly here,
-  # they're just empty -- exercised for real by a real user's continuous
-  # daily history, not by this harness. Do not carry this into the
-  # package's own dbt_project.yml default.
-  waterfall__period_grain: ['month']
+  # waterfall__period_grain is intentionally NOT overridden here (was
+  # ['month'] only, pre-ENG-7e) -- the package default (['month',
+  # 'quarter']) needs real quarter-grain data to actually exercise, and an
+  # override that silently dropped 'quarter' from every CI run meant the
+  # quarterly bridge was never once tested end to end. The seed
+  # (integration_tests/seeds/salesforce__opportunity_daily_history.csv)
+  # now carries anchor snapshots through 2026-07-01 (two real quarters)
+  # specifically so this default can run for real -- see ADR 0009.
   # Test-harness-only override of the package default (2). This project's
   # fixtures only span one real month (January -> February) by design.
   # Extending the seed backward to satisfy the default threshold was tried

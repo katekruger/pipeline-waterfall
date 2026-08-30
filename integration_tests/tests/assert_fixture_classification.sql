@@ -1,4 +1,5 @@
--- Fails if any of the 20 canonical fixtures (see
+-- Fails if any of the 23 canonical fixtures (20 from the original build,
+-- plus 21/22/23 added for ENG-7d/ENG-7e -- see
 -- integration_tests/seeds/salesforce__opportunity_daily_history.csv and the
 -- edge-case checklist in the prompts doc) doesn't land in its documented
 -- expected bucket for the January 2026 monthly period. Expected NULL means
@@ -21,6 +22,13 @@
 -- previously-nonzero deal is a real contraction (its pipeline contribution
 -- genuinely dropped to nothing) rather than falling through unclassified --
 -- see ADR 0004.
+--
+-- Fixtures 21 and 22 (ENG-7d, ADR 0006): both have an in-period t0
+-- close_date that never moves and stay open past period end -- exactly
+-- what classify_movement's 'slipped' branch matched unconditionally
+-- before this fixture existed. 21 also grew in amount and must land in
+-- 'expanded', not 'slipped'; 22 also advanced a stage and must land in
+-- 'advanced', not 'slipped'.
 
 with expected as (
 
@@ -45,7 +53,9 @@ with expected as (
             ('case16-merged-survivor-1', 'expanded'),
             ('case18-amount-null-1', 'contracted'),
             ('case20-currency-usd-1', null),
-            ('case20-currency-eur-1', null)
+            ('case20-currency-eur-1', null),
+            ('case21-grew-in-period-close-1', 'expanded'),
+            ('case22-advanced-in-period-close-1', 'advanced')
     ) as t (entity_id, expected_bucket)
 
 ),

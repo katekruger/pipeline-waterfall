@@ -47,5 +47,31 @@ jobs:
       - name: dbt deps
         run: uv run --python 3.12 --with "dbt-core==${{ matrix.dbt-version }}" --with "dbt-duckdb==${{ matrix.dbt-duckdb-version }}" dbt deps
 
+      # Cold-warehouse checks (ENG-7e/ADR 0007): these MUST run before `dbt
+      # build` below creates ${{ env.DBT_DUCKDB_PATH }} -- run_query() calls
+      # at compile time (int_waterfall__period_boundaries.sql and the
+      # waterfall__cohort_mode = 'current_state' lookup) used to fail here,
+      # because `execute` is True for both of these commands even though no
+      # relation has been built yet.
+      - name: dbt compile (cold warehouse)
+        run: uv run --python 3.12 --with "dbt-core==${{ matrix.dbt-version }}" --with "dbt-duckdb==${{ matrix.dbt-duckdb-version }}" dbt compile
+
+      - name: dbt docs generate (cold warehouse)
+        run: uv run --python 3.12 --with "dbt-core==${{ matrix.dbt-version }}" --with "dbt-duckdb==${{ matrix.dbt-duckdb-version }}" dbt docs generate
+
+      - name: Remove cold-warehouse artifact
+        run: rm -f "$DBT_DUCKDB_PATH"
+
       - name: dbt build
         run: uv run --python 3.12 --with "dbt-core==${{ matrix.dbt-version }}" --with "dbt-duckdb==${{ matrix.dbt-duckdb-version }}" dbt build
+
+      # current_state must reconcile across repeated runs, not just once
+      # (ENG-7b/ADR 0007) -- a documented config option that reconciles on
+      # the first run and breaks (or silently diverges) on the second is
+      # exactly the "silently wrong number" failure mode this package
+      # exists to refuse.
+      - name: dbt build (current_state, run 1)
+        run: uv run --python 3.12 --with "dbt-core==${{ matrix.dbt-version }}" --with "dbt-duckdb==${{ matrix.dbt-duckdb-version }}" dbt build --vars '{waterfall__cohort_mode: current_state}'
+
+      - name: dbt build (current_state, run 2)
+        run: uv run --python 3.12 --with "dbt-core==${{ matrix.dbt-version }}" --with "dbt-duckdb==${{ matrix.dbt-duckdb-version }}" dbt build --vars '{waterfall__cohort_mode: current_state}'
