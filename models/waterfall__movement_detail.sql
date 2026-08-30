@@ -26,8 +26,23 @@
 -- exactly on a quarter boundary (Jan/Apr/Jul/Oct 1) -- so the literal key
 -- collides for any entity with a movement in one of those months. Adding
 -- period_grain to the surrogate is the minimal fix; see ADR 0003.
+--
+-- The incremental filter below is skipped entirely under
+-- waterfall__cohort_mode = 'current_state' (ENG-7b, ADR 0010). Under
+-- cohort_at_open, "period_start > max(period_start already loaded)" is
+-- correct: a period's classification is frozen once computed, so only
+-- genuinely new periods ever need a new row. Under current_state, EVERY
+-- period's t1 is the single latest known snapshot, which moves forward on
+-- every sync -- so a period computed on a prior run is not just
+-- incomplete, it is stale, and "only append new period_starts" would
+-- silently leave every previously-loaded period's bridge_amount frozen at
+-- whatever current_state happened to mean on the run that first computed
+-- it. Skipping the filter makes this model re-select every period every
+-- run under current_state; dbt's unique_key merge then updates each
+-- period_start's existing row in place rather than duplicating it.
 
 {% set amount_change_precedence = var('waterfall__amount_change_precedence', 'terminal_wins') %}
+{% set cohort_mode = var('waterfall__cohort_mode', 'cohort_at_open') %}
 
 with transitions as (
 
@@ -84,6 +99,6 @@ select
     currency_code_t1 as currency_code
 from with_amount
 
-{% if is_incremental() %}
+{% if is_incremental() and cohort_mode != 'current_state' %}
 where period_start > (select coalesce(max(period_start), cast('1900-01-01' as date)) from {{ this }})
 {% endif %}

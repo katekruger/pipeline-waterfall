@@ -138,7 +138,27 @@ so dbt's ref-rewriting applies to it too).
   both fail before this fix (confirmed: `Catalog Error: Table ... does
   not exist`) and succeed after.
 - `dbt build --vars '{waterfall__cohort_mode: current_state}'`, run twice
-  in a row, fails before this fix (confirmed: a compile error in
+  in a row *starting from a freshly full-refreshed database*, fails
+  before this fix (confirmed: a compile error in
   `test_bridge_reconciles_fires_on_vanished_entity`) and succeeds both
   times after, including `bridge_reconciles` and `mart_bridge_reconciles`
   passing on both runs.
+
+## Correction (2026-08-30, same day)
+
+The "Assumption this relies on" / Context section above states that the
+originally-suspected incremental-staleness root cause "did not
+reproduce." That conclusion was an artifact of this ADR's own test
+methodology, not a correct finding: every local verification here started
+from a database that had just been fully rebuilt (`rm dev.duckdb`)
+immediately before switching to `current_state`, which incidentally forced
+a full refresh and masked the actual bug. CI (PR #9, immediately after
+this ADR's PR #8 merged) caught the real failure: running the *default*
+`dbt build` first, then switching to `current_state` on that same
+already-populated database -- the realistic sequence for an existing
+project, and the one CI's own steps actually perform in order -- does
+fail, with a genuine reconciliation delta, not a compile error. The
+incremental-staleness theory was correct after all. See ADR 0010 for the
+actual fix and root cause. This ADR's own fixes (the `run_query` guards
+above) remain correct and necessary; they were simply not the whole
+story.
