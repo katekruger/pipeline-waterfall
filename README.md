@@ -86,7 +86,7 @@ A truly out-of-the-box CRM waterfall is not achievable — every available histo
 
 This package would rather fail your build than hand you a wrong number quietly. Nine checks run every time and fail loudly, each naming the exact fix:
 
-- **`bridge_reconciles`** — opening pipeline + every movement bucket must equal closing pipeline, *exactly*, every period. This is the headline feature; if it doesn't hold, nothing downstream can be trusted.
+- **`bridge_reconciles`** — opening pipeline + every movement bucket must equal closing pipeline, *exactly*, every period. This proves no dollar of change is unaccounted for. It does not prove each dollar landed in the right bucket; that is what the `classify_movement` fixtures cover.
 - **`mart_bridge_reconciles`** — restates `bridge_reconciles` against `waterfall__bridge_monthly`/`waterfall__bridge_quarterly`'s own `bridge_amount` column, the one a chart actually queries — catches a regression there even if `bridge_reconciles` itself still passes.
 - **`hubspot_closedate_tracked`** — the single most important check in the package (once HubSpot lands in v0.2). HubSpot doesn't track close date in property history by default. Without it, a waterfall runs cleanly, reconciles, and reports zero slippage forever — and nothing else would ever tell you why.
 - **`salesforce_history_enabled`**, **`history_depth`** — the models this package reads from are disabled by default and don't backfill. A new connection has zero usable history on day one.
