@@ -72,10 +72,18 @@ case
 
     {% if slippage_definition == 'close_date_period' %}
     -- slipped: close_date was in-period at t0, period ended with it still
-    -- open (fixture 7).
+    -- open (fixture 7) -- AND stage_order and amount are both unchanged
+    -- (ENG-7d, ADR 0006). Without that second clause, 'slipped' matches
+    -- every still-open deal whose close_date merely falls in the review
+    -- period -- the common case for a current-quarter pipeline review --
+    -- ahead of 'advanced'/'expanded'/'contracted' below, regardless of
+    -- whether the deal actually advanced or moved dollars. See fixtures
+    -- 21 and 22.
     when exists_t0 and exists_t1
         and not coalesce(is_closed_t0, false) and not coalesce(is_closed_t1, false)
         and close_date_t0 >= period_start and close_date_t0 < period_end
+        and stage_order_t1 is not distinct from stage_order_t0
+        and coalesce(amount_t1, 0) = coalesce(amount_t0, 0)
         then 'slipped'
     {% else %}
     -- period_end_open: Saber's glossary collapses pushed and slipped into
@@ -83,9 +91,12 @@ case
     -- open at both boundaries that didn't get pulled in counts as
     -- 'slipped', whether or not its close_date moved. Fixture 5, which is
     -- 'pushed' under the default definition, is 'slipped' under this one --
-    -- see the dedicated test.
+    -- see the dedicated test. Same ENG-7d narrowing as above applies here
+    -- too, for the same reason.
     when exists_t0 and exists_t1
         and not coalesce(is_closed_t0, false) and not coalesce(is_closed_t1, false)
+        and stage_order_t1 is not distinct from stage_order_t0
+        and coalesce(amount_t1, 0) = coalesce(amount_t0, 0)
         then 'slipped'
     {% endif %}
 
