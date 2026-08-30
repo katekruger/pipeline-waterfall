@@ -36,7 +36,21 @@ with periods as (
 {% set latest_query %}
     select cast(max(date_day) as date) as latest_date from {{ ref('int_waterfall__daily_state') }}
 {% endset %}
-{% if execute %}
+{% if execute and model.resource_type != 'unit_test' and load_relation(ref('int_waterfall__daily_state')) is not none %}
+{#- execute alone isn't enough on a cold/empty warehouse -- see ENG-7e and
+    the identical guard in int_waterfall__period_boundaries.sql. The
+    resource_type check is separate and load-bearing for a different
+    reason (ENG-7b): dbt's unit-test compiler swaps every ref() in this
+    model for an injected fixture CTE, but a nested run_query() call is
+    NOT rewritten the same way and fails against the real relation name.
+    Every unit_test in models/preflight/schema.yml supplies its own
+    period_boundaries/daily_state fixtures directly via `given:` and
+    doesn't exercise current_state semantics regardless of what
+    waterfall__cohort_mode happens to be set to for the invocation as a
+    whole -- so falling back to the sentinel here is safe for every
+    unit_test that exists today. A future unit_test that specifically
+    needs to exercise current_state's live-latest-date behavior can't be
+    written against this model as-is; see ADR 0007. -#}
     {% set latest_result = run_query(latest_query) %}
     {% set latest_date = latest_result.columns[0].values()[0] %}
 {% else %}

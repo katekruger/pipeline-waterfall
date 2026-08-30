@@ -148,24 +148,97 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: entity_id
+        description: The opportunity/deal id, as in the contract (`int_waterfall__daily_state`).
+      - name: source_relation
+        description: Multi-connector union key, as in the contract. `''` for Salesforce in v0.1.
+      - name: period_grain
+        description: "'month' or 'quarter' (whichever grains are in `waterfall__period_grain`)."
+      - name: period_start
+        description: The first day of the period (inclusive) this movement was classified in.
+      - name: period_end
+        description: The first day of the next period (exclusive) -- this period's t1 snapshot date.
       - name: movement_bucket
         description: One of the ten buckets. Never NULL in this model (unlike `int_waterfall__transitions`) -- unclassified rows are filtered out here.
         data_tests:
           - not_null
       - name: movement_amount
         description: >
-          The dollar figure for this bucket. For `expanded`/`contracted`,
-          the signed delta (t1 amount - t0 amount). For every other bucket,
-          the relevant amount at t1 -- except `won`/`lost`, which respect
-          `waterfall__amount_change_precedence` (see ADR 0003).
+          A BUSINESS-REPORTING figure ("how big was the deal that
+          won/expanded/..."), not a reconciling one. For
+          `expanded`/`contracted`, the signed delta (t1 amount - t0
+          amount). For every other bucket, the relevant amount at t1 --
+          except `won`/`lost`, which respect
+          `waterfall__amount_change_precedence` (see ADR 0003). Do not sum
+          this across buckets expecting it to tie to opening/closing
+          pipeline -- it will not. See `bridge_amount` for that, and ADR
+          0005 (ENG-7a) for why the two deliberately diverge.
+
+      - name: bridge_amount
+        description: >
+          THE COLUMN TO CHART. The actual signed open-pipeline delta this
+          row is responsible for -- sum this across buckets for any period
+          and it equals that period's closing pipeline minus opening
+          pipeline, exactly (asserted by `bridge_reconciles` here and by
+          `mart_bridge_reconciles` again at the
+          `waterfall__bridge_monthly`/`waterfall__bridge_quarterly` layer).
+          Deliberately different from `movement_amount` -- see ADR 0004
+          and ADR 0005 (ENG-7a).
+
+      - name: stage
+        description: The opportunity/deal's stage name at t1 (period end).
+      - name: currency_code
+        description: The opportunity/deal's currency code at t1. Nullable in v0.1 -- see the contract's own `currency_code` column.
 
   - name: waterfall__bridge_monthly
     description: >
       `waterfall__movement_detail` aggregated to (period_start, period_end,
-      movement_bucket) at monthly grain: `movement_count` and
-      `movement_amount` per bucket per period. Bridge reconciliation
-      (opening + movements = closing, exactly) is asserted by a dedicated
-      test in Prompt 3, not by this model.
+      movement_bucket) at monthly grain: `movement_count`,
+      `movement_amount`, and `bridge_amount` per bucket per period. Bridge
+      reconciliation (opening + movements = closing, exactly) is asserted
+      by `bridge_reconciles` (against `waterfall__movement_detail`) and
+      `mart_bridge_reconciles` (against this model's own `bridge_amount`),
+      not by this model itself.
+    columns:
+      - name: period_start
+        description: The first day of the period (inclusive).
+      - name: period_end
+        description: The first day of the next period (exclusive).
+      - name: movement_bucket
+        description: One of the ten movement buckets.
+      - name: movement_count
+        description: Number of opportunities/deals classified into this bucket this period.
+      - name: movement_amount
+        description: >
+          A BUSINESS-REPORTING figure, not a reconciling one -- see the
+          identically-named column on `waterfall__movement_detail`. Do not
+          chart this expecting a waterfall to tie out; use `bridge_amount`.
+      - name: bridge_amount
+        description: >
+          THE COLUMN TO CHART. Sum this across every `movement_bucket` for
+          a given period and it equals that period's closing pipeline
+          minus opening pipeline, exactly -- see `mart_bridge_reconciles`
+          and ADR 0005 (ENG-7a).
 
   - name: waterfall__bridge_quarterly
     description: Same shape as `waterfall__bridge_monthly`, at quarterly grain.
+    columns:
+      - name: period_start
+        description: The first day of the period (inclusive).
+      - name: period_end
+        description: The first day of the next period (exclusive).
+      - name: movement_bucket
+        description: One of the ten movement buckets.
+      - name: movement_count
+        description: Number of opportunities/deals classified into this bucket this period.
+      - name: movement_amount
+        description: >
+          A BUSINESS-REPORTING figure, not a reconciling one -- see the
+          identically-named column on `waterfall__movement_detail`. Do not
+          chart this expecting a waterfall to tie out; use `bridge_amount`.
+      - name: bridge_amount
+        description: >
+          THE COLUMN TO CHART. Sum this across every `movement_bucket` for
+          a given period and it equals that period's closing pipeline
+          minus opening pipeline, exactly -- see `mart_bridge_reconciles`
+          and ADR 0005 (ENG-7a).
