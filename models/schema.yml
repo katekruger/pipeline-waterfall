@@ -148,6 +148,16 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: entity_id
+        description: The opportunity/deal id, as in the contract (`int_waterfall__daily_state`).
+      - name: source_relation
+        description: Multi-connector union key, as in the contract. `''` for Salesforce in v0.1.
+      - name: period_grain
+        description: "'month' or 'quarter' (whichever grains are in `waterfall__period_grain`)."
+      - name: period_start
+        description: The first day of the period (inclusive) this movement was classified in.
+      - name: period_end
+        description: The first day of the next period (exclusive) -- this period's t1 snapshot date.
       - name: movement_bucket
         description: One of the ten buckets. Never NULL in this model (unlike `int_waterfall__transitions`) -- unclassified rows are filtered out here.
         data_tests:
@@ -174,6 +184,11 @@ models:
           `waterfall__bridge_monthly`/`waterfall__bridge_quarterly` layer).
           Deliberately different from `movement_amount` -- see ADR 0004
           and ADR 0005 (ENG-7a).
+
+      - name: stage
+        description: The opportunity/deal's stage name at t1 (period end).
+      - name: currency_code
+        description: The opportunity/deal's currency code at t1. Nullable in v0.1 -- see the contract's own `currency_code` column.
 
   - name: waterfall__bridge_monthly
     description: >
