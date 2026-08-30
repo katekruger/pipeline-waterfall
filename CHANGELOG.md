@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- `waterfall__bridge_monthly` and `waterfall__bridge_quarterly` now expose `bridge_amount`, the actual reconciling column -- previously they only aggregated `movement_amount`, a business-reporting figure with no reconciling property, so a chart built from the model literally named `bridge_monthly` never tied out. A new preflight test, `mart_bridge_reconciles`, fails the build if this regresses. See ADR 0005.
+
 ## 0.1.0 — 2026-08-29
 
 ### Added
