@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `dbt compile` and `dbt docs generate` no longer fail against a cold/empty warehouse -- the compile-time `run_query()` calls used to resolve period boundaries and `waterfall__cohort_mode: current_state`'s "latest known snapshot" date are now guarded against a relation that hasn't been built yet, not just against pure static parsing. `waterfall__cohort_mode: current_state` also now reconciles across repeated `dbt build` runs, including this package's own unit tests. Both are covered in CI going forward. See ADR 0007.
 - `slipped` no longer swallows `advanced`/`expanded`/`contracted` for any deal whose close date simply falls within the reporting period -- previously true of most of a current-quarter pipeline review. `slipped` now additionally requires that stage and amount are both unchanged; a deal that also advanced a stage or moved dollars is now reported as that instead. See ADR 0006.
 - `waterfall__bridge_monthly` and `waterfall__bridge_quarterly` now expose `bridge_amount`, the actual reconciling column -- previously they only aggregated `movement_amount`, a business-reporting figure with no reconciling property, so a chart built from the model literally named `bridge_monthly` never tied out. A new preflight test, `mart_bridge_reconciles`, fails the build if this regresses. See ADR 0005.
 

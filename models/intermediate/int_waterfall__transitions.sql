@@ -38,7 +38,13 @@ daily_state as (
 {% set latest_query %}
     select cast(max(date_day) as date) as latest_date from {{ ref('int_waterfall__daily_state') }}
 {% endset %}
-{% if execute %}
+{% if execute and model.resource_type != 'unit_test' and load_relation(ref('int_waterfall__daily_state')) is not none %}
+{#- execute alone isn't enough on a cold/empty warehouse -- see ENG-7e.
+    The resource_type check is separate (ENG-7b): dbt's unit-test compiler
+    swaps every ref() in this model for an injected fixture CTE, but a
+    nested run_query() call is NOT rewritten and fails against the real
+    relation name. See the identical, more fully commented guard in
+    models/preflight/bridge_reconciles.sql and ADR 0007. -#}
     {% set latest_result = run_query(latest_query) %}
     {% set latest_date = latest_result.columns[0].values()[0] %}
 {% else %}
