@@ -79,6 +79,19 @@ models:
           config:
             store_failures: true
 
+  - name: created_stage_filter_excludes_pipeline
+    description: >
+      Fires when `waterfall__created_stage_filter` is set and excludes an
+      entity that would otherwise classify as `created` this period --
+      the entity is still counted in closing pipeline (nothing in
+      `int_waterfall__daily_state` knows about the filter), so the bridge
+      won't reconcile, and without this test a user has no indication
+      that `created_stage_filter` is the cause. See ADR 0008 (ENG-7c).
+    data_tests:
+      - assert_empty:
+          config:
+            store_failures: true
+
   - name: history_gap
     description: >
       Fires when an entity is present on day N and day N+2 but absent on
@@ -114,6 +127,25 @@ unit_tests:
     expect:
       rows:
         - {entity_id: 'unit-test-1', present_day_n: '2026-01-10', present_day_n_plus_2: '2026-01-12'}
+
+  - name: test_created_stage_filter_excludes_pipeline_fires
+    description: >
+      Proves created_stage_filter_excludes_pipeline fires when
+      waterfall__created_stage_filter excludes the stage a genuinely new,
+      still-open entity was created in this period (ENG-7c) -- the
+      scenario that otherwise breaks bridge_reconciles with no
+      explanation of why.
+    model: created_stage_filter_excludes_pipeline
+    overrides:
+      vars:
+        waterfall__created_stage_filter: ['Prospecting']
+    given:
+      - input: ref('int_waterfall__transitions')
+        rows:
+          - {entity_id: 'unit-test-1', period_grain: 'month', period_start: '2026-01-01', period_end: '2026-02-01', exists_t0: false, exists_t1: true, is_closed_t1: false, created_date: '2026-01-15', stage_t1: 'Qualification', amount_t1: 8000}
+    expect:
+      rows:
+        - {entity_id: 'unit-test-1', period_grain: 'month', period_start: '2026-01-01', excluded_stage: 'Qualification', amount: 8000}
 
   - name: test_bridge_reconciles_fires_on_vanished_entity
     description: >
