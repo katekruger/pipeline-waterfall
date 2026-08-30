@@ -6,10 +6,16 @@
 --
 -- Opening/closing pipeline are computed directly from
 -- int_waterfall__daily_state here -- independently of
--- waterfall__movement_detail's bridge_amount -- so this test can actually
--- catch a real bug in classify_movement, rather than just checking its own
--- math against itself. "Pipeline" = open (is_closed = false); this package
--- does not exclude is_deleted from pipeline totals in v0.1 -- see ADR 0004.
+-- waterfall__movement_detail's bridge_amount -- so this test verifies that
+-- every dollar of change is attributed to SOME bucket, rather than just
+-- checking its own math against itself. "Pipeline" = open (is_closed = false);
+-- this package does not exclude is_deleted from pipeline totals in v0.1 --
+-- see ADR 0004.
+--
+-- WHAT THIS DOES NOT CATCH: bridge_amount is computed independently of
+-- movement_bucket, so a deal placed in the WRONG bucket still reconciles.
+-- This is a completeness check, not a correctness check. Bucket correctness
+-- is covered by the classify_movement unit fixtures, not by this model.
 --
 -- t1's date basis mirrors int_waterfall__transitions' cohort_mode handling
 -- exactly (period_end under cohort_at_open, the single latest date_day
