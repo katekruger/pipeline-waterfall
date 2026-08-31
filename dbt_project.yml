@@ -1,5 +1,5 @@
 name: 'pipeline_waterfall'
-version: '0.1.0'
+version: '0.1.1'
 config-version: 2
 
 # MUST include 2.0.0 in the range — packages that exclude it warn under Fusion
