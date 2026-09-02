@@ -103,3 +103,11 @@ Every one of these has been proven to actually fire against a deliberately broke
 - [`docs/history-sources.md`](docs/history-sources.md) — every history source and its specific failure mode.
 - [`BUILD-PLAN.md`](BUILD-PLAN.md) — the full architecture, roadmap, and research behind the package.
 - [`docs/decisions/`](docs/decisions/) — ADRs for every non-obvious, hard-to-reverse decision.
+
+## See also
+
+Every project here shares one idea: a GTM system should refuse to act on data it cannot verify.
+
+[segment-mcp](https://github.com/katekruger/segment-mcp) — upstream of the numbers this package reconciles. Answers which events actually reach which destinations before you model them.
+
+[awesome-gtm-engineering](https://github.com/katekruger/awesome-gtm-engineering) — a curated map of the wider GTM engineering toolchain this sits in.
